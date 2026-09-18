@@ -1,0 +1,47 @@
+version: "3"
+
+# docker run --privileged -dit --name kacpp-mail --net kaawsnet -p 25:25 -p 465:465 -p 587:587 -v /home:/home/mail_users -v /home/local_etc:/usr/local/etc kagalpandh/kacpp-mail
+#             - type: bind
+#                 source: /home/local_etc
+#                 target: /usr/local/etc
+#             - type: bind
+#                 source: /home
+#                 target: /home/mail_users
+#             - type: bind
+#                 source: /sys/fs/cgroup
+#                 target: /sys/fs/cgroup:ro
+
+services:
+    kacpp-mail:
+        image: kagalpandh/kacpp-smtp
+        container_name: kacpp-smtp
+        volumes:
+            - /home/local_etc:/usr/local/etc
+            - /home:/home/mail_users
+            - /home/data/backup:/dest
+#             - /sys/fs/cgroup:/sys/fs/cgroup:rw
+        networks:
+            kaawsnet:
+                ipv4_address: 192.168.32.25
+        ports:
+            - "25:25"
+            - "465:465"
+            - "587:587"
+        cap_add:
+            - SYS_ADMIN
+        privileged: true
+#         tmpfs:
+#             - /tmp
+#             - /run
+#             - /run/lock
+#         cgroup-parent: docker.slice 
+#         cgroupns: private
+#         restart: no
+        env_file: kacpp-smtp.src
+#         environment:
+#             PGDATA: /home/data/db/pgdata
+networks:
+    kaawsnet:
+        external: true
+
+

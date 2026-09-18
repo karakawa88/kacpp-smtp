@@ -1,0 +1,15 @@
+[Unit]
+Description=SMTP Server Postfix 
+Documentation=man:postfix(8) man:main.cf(5)
+# After=network.target saslauthd.service clamd.service opendkim.service opendmarc.service clamav-milter.service
+# Before=dovecot.service
+
+[Service]
+ExecStart=/usr/local/sbin/postfix -c /usr/local/etc/postfix start
+ExecStop=/usr/local/sbin/postfix stop
+ExecReload=/usr/local/sbin/postfix reload
+Restart=no
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

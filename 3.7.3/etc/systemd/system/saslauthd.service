@@ -1,0 +1,13 @@
+[Unit]
+Description=Cyrus-SASL saslauthd Daemon
+Documentation=man:saslauthd(8)
+After=network.target
+Before=sshd.service postfix.service dovecot.service
+
+[Service]
+ExecStart=/usr/sbin/saslauthd -c -a sasldb
+Restart=no
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

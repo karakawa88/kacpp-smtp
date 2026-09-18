@@ -1,0 +1,17 @@
+/var/log/clamav/clamav-milter.log
+{
+	rotate 7
+	weekly
+	missingok
+	notifempty
+	delaycompress
+	compress
+	copytruncate
+	su root root
+	size 6M
+	postrotate
+		systemctl reload clamav-milter
+	endscript
+}
+
+

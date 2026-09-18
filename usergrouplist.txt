@@ -1,0 +1,10 @@
+# user
+# user:user_name:uid:group[:passwd]
+# group
+# group:group_name:gid
+# group:mail:8
+user:kaawsadmin:1001:mail
+user:kaawsdev:1002:mail
+
+
+

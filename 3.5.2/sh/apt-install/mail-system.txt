@@ -26,3 +26,5 @@ opendkim-tools
 # clamav
 libcurl4
 libltdl7
+# postgrey
+postgrey

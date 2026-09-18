@@ -1,0 +1,13 @@
+[Unit]
+Description=DMARC Server OpenDMARC 
+Documentation=man:opendmarc(8) man:opendmarc.conf(5)
+After=network.target saslauthd.service opendkim.service
+Before=postfix.service
+
+[Service]
+ExecStart=/usr/local/sbin/opendmarc -c /usr/local/etc/opendmarc/opendmarc.conf
+Restart=no
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

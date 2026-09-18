@@ -1,0 +1,22 @@
+[Unit]
+Description=Virus Scan Milter clamav-milter
+Before=postfix.service dovecot.service opendkim.service opendmarc.service
+Before=postfix.service
+After=clamd.service
+
+[Service]
+# ExecStart=/usr/local/sbin/clamav-milter -c /usr/local/etc/clamav/clamav-milter.conf
+ExecStart=/usr/local/sbin/clamav-milter -c /usr/local/etc/clamav/clamav-milter.conf
+ExecStop=/bin/kill -15 `cat /var/run/clamav/clamav-milter.pid`
+ExecReload=/bin/kill -1 `cat /var/run/clamav/clamav-milter.pid`
+Restart=no
+Type=forking
+# デフォルトは90秒で起動準備ができないサーバーは停止するが
+# postgresはクラッシュリカバリーなどを行うためここは無効にするため0を指定。
+TimeoutSec=90
+
+[Install]
+WantedBy=multi-user.target
+
+
+

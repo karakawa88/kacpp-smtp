@@ -1,0 +1,13 @@
+[Unit]
+Description=
+
+[Timer]
+OnCalendar=*-*-* 00/6:48
+Unit=user-maildir-backup.service
+AccuracySec=30m
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
+

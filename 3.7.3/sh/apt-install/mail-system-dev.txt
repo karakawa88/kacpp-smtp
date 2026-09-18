@@ -1,0 +1,49 @@
+# PostgreSQL
+libpq-dev
+libpq5
+libpqxx-6.4
+libpqxx-dev
+# MySQL
+default-mysql-client
+default-libmysqlclient-dev
+default-libmysqld-dev
+libmariadb-dev
+# Cyrus-SASL
+libsasl2-2
+libsasl2-dev
+libsasl2-modules
+libsasl2-modules-db
+libsasl2-modules-sql
+# Postfix
+libssl-dev
+pkg-config
+libdb5.3
+libdb5.3-dev
+libdb5.3++
+libdb5.3++-dev
+libicu-dev
+# OpenDMARC
+libmilter1.0.1
+libmilter-dev
+# clamav
+libcurl4
+libcurl4-gnutls-dev
+#libcurl4-openssl-dev
+cargo
+rustc
+pkg-config
+python3-pytest
+valgrind
+check
+libbz2-dev
+#libcurl4-openssl-dev
+libjson-c-dev
+libmilter-dev
+libncurses5-dev
+libpcre2-dev
+libssl-dev
+libxml2-dev
+zlib1g-dev
+#Python
+python3-pip
+

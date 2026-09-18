@@ -1,6 +1,6 @@
 # PstgreSQL環境を持つdebianイメージ
 # 日本語化も設定済み
-FROM        kagalpandh/kacpp-gccdev:8 AS builder
+FROM        kagalpandh/kacpp-dev  AS builder
 SHELL       [ "/bin/bash", "-c" ]
 WORKDIR     /root
 ENV         DEBIAN_FORONTEND=noninteractive
@@ -9,11 +9,11 @@ ENV         MSMTP_SRC=msmtp-${MSMTP_VERSION}
 ENV         MSMTP_SRC_FILE=${MSMTP_SRC}.tar.xz
 ENV         MSMTP_URL="https://marlam.de/msmtp/releases/${MSMTP_SRC_FILE}"
 ENV         MSMTP_DEST=${MSMTP_SRC}
-ENV         CYRUS_VERSION=2.1.27
-ENV         CYRUS_SRC=cyrus-sasl-${CYRUS_VERSION}
-ENV         CYRUS_SRC_FILE=${CYRUS_SRC}.tar.gz
-ENV         CYRUS_URL="https://github.com/cyrusimap/cyrus-sasl/archive/refs/tags/${CYRUS_SRC_FILE}"
-ENV         CYRUS_DEST=${CYRUS_SRC}
+# ENV         CYRUS_VERSION=2.1.27
+# ENV         CYRUS_SRC=cyrus-sasl-${CYRUS_VERSION}
+# ENV         CYRUS_SRC_FILE=${CYRUS_SRC}.tar.gz
+# ENV         CYRUS_URL="https://github.com/cyrusimap/cyrus-sasl/archive/refs/tags/${CYRUS_SRC_FILE}"
+# ENV         CYRUS_DEST=${CYRUS_SRC}
 COPY        sh/apt-install/mail-system-dev.txt /usr/local/sh/apt-install
 # https://github.com/cyrusimap/cyrus-sasl/archive/refs/tags/cyrus-sasl-2.1.27.zip
 # 開発環境インストール
@@ -30,13 +30,13 @@ RUN         apt update && \
             # make && make install
 # ftp://ftp.porcupine.org/mirrors/project-history/postfix/official/postfix-3.5.2.tar.gz
 # Postfixビルドとインストール
-ENV         POSTFIX_VERSION=3.5.2
+ENV         POSTFIX_VERSION=3.11.7
 ENV         POSTFIX_SRC=postfix-${POSTFIX_VERSION}
 ENV         POSTFIX_SRC_FILE=${POSTFIX_SRC}.tar.gz
-ENV         POSTFIX_URL="ftp://ftp.porcupine.org/mirrors/project-history/postfix/official/${POSTFIX_SRC_FILE}"
+ENV         POSTFIX_URL="https://archive.mgm51.com/mirrors/postfix-source/official/{POSTFIX_SRC_FILE}"
 ENV         POSTFIX_DEST=${POSTFIX_SRC}
 RUN         wget ${POSTFIX_URL} && tar -zxvf ${POSTFIX_SRC_FILE} && cd ${POSTFIX_SRC} && \
-                make makefiles CCARGS="-DUSE_TLS -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I/usr/include/sasl" \
+                make makefiles CCARGS="-DUSE_TLS -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I/usr/include/sasl" && \
                 AUXLIBS="-L/usr/local/lib -lsasl2 -lssl -lcrypto" && \
                 make && \
                 mkdir /usr/local/${POSTFIX_DEST} && \
@@ -51,7 +51,7 @@ ENV         OPENDMARC_DEST=${OPENDMARC_SRC}
 RUN         wget ${OPENDMARC_URL} && tar -zxvf ${OPENDMARC_SRC_FILE} && cd ${OPENDMARC_SRC} && \
             ./configure --prefix=/usr/local/${OPENDMARC_DEST} && make && make install
 # clamavのビルド
-ENV         CLAMAV_VERSION=0.103.2
+ENV         CLAMAV_VERSION=1.5.4
 ENV         CLAMAV_SRC=clamav-${CLAMAV_VERSION}
 ENV         CLAMAV_SRC_FILE=${CLAMAV_SRC}.tar.gz
 ENV         CLAMAV_URL=https://www.clamav.net/downloads/production/${CLAMAV_SRC_FILE}
@@ -62,7 +62,7 @@ RUN         wget -O ${CLAMAV_SRC_FILE} ${CLAMAV_URL} && tar -zxvf ${CLAMAV_SRC_F
 # クリーンアップ
 RUN         apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/* && \
                 cd ../ && rm -rf ${MSMTP_SRC}*
-FROM        kagalpandh/kacpp-pydev:3.9.5
+FROM        kagalpandh/kacpp-base
 SHELL       [ "/bin/bash", "-c" ]
 WORKDIR     /root
 USER        root

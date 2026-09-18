@@ -1,0 +1,12 @@
+[Unit]
+Description=ユーザーMaildirバックアップサービス
+After=network-online.target clamd.service
+
+[Service]
+ExecStart=/usr/local/sh/mail/users-mail-backup.sh
+Type=oneshot
+#TimeoutSec=0
+#RemainAfterExit=yes
+
+[Install]
+RequiredBy=users-maildir-backup.timer

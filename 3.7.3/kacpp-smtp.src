@@ -1,0 +1,6 @@
+# docker-compose用環境変数定義ファイル
+# kacpp-smtpコンテナーに渡す環境変数
+# rsyslogにmailファシリティログを転送するホスト
+MAIL_LOG_HOST="192.168.32.1"
+# ユーザーMaildirをバックアップにかけるか
+MAILDIR_BACKUP="TRUE"

@@ -1,10 +1,14 @@
-FROM        kagalpandh/kacpp-dev AS builder
+# PstgreSQL環境を持つdebianイメージ
+# 日本語化も設定済み
+FROM        kagalpandh/kacpp-gccdev AS builder
 SHELL       [ "/bin/bash", "-c" ]
 WORKDIR     /root
 ENV         DEBIAN_FORONTEND=noninteractive
-ENV         MSMTP_VERSION=1.8.34
+ENV         MSMTP_VERSION=1.8.22
 ENV         MSMTP_SRC=msmtp-${MSMTP_VERSION}
 ENV         MSMTP_SRC_FILE=${MSMTP_SRC}.tar.xz
+ENV         MSMTP_GPG_PUB_KEY="key.txt"
+ENV         MSMTP_GPG_PUB_KEY_URL="https://marlam.de/${MSMTP_GPG_PUB_KEY}"
 ENV         MSMTP_URL="https://marlam.de/msmtp/releases/${MSMTP_SRC_FILE}"
 ENV         MSMTP_DEST=${MSMTP_SRC}
 # ENV         CYRUS_VERSION=2.1.27
@@ -21,8 +25,12 @@ RUN         apt update && \
             pip3 install $(cat /usr/local/sh/pip-install/* |\
                 grep -v -E '(^#.*$)|(^[ \t]*$)' | uniq | xargs) && \
             # msmtp
+            # GPG Sign
+            wget ${MSMTP_GPG_PUB_KEY_URL} && \
+            gpg --import ${MSMTP_GPG_PUB_KEY} && \
             # msmstp download
-            wget ${MSMTP_URL} && \
+            wget ${MSMTP_URL} && wget ${MSMTP_URL}.sig && \
+            gpg --verify ${MSMTP_SRC_FILE}.sig ${MSMTP_SRC_FILE} && \
             # msmtpビルド
             # ./configure --prefix=... && make && make install
             tar -Jxvf ${MSMTP_SRC_FILE} && cd ${MSMTP_SRC} && \
@@ -33,12 +41,16 @@ RUN         apt update && \
             # make && make install
 # ftp://ftp.porcupine.org/mirrors/project-history/postfix/official/postfix-3.5.2.tar.gz
 # Postfixビルドとインストール
-ENV         POSTFIX_VERSION=3.11.7
+ENV         POSTFIX_VERSION=3.7.3
+ENV         POSTFIX_GPG_PUB_KEY="wietse.pgp"
+ENV         POSTFIX_GPG_PUB_URL="https://ghostarchive.org/postfix/postfix-release/${POSTFIX_GPG_PUB_KEY}"
 ENV         POSTFIX_SRC=postfix-${POSTFIX_VERSION}
 ENV         POSTFIX_SRC_FILE=${POSTFIX_SRC}.tar.gz
-ENV         POSTFIX_URL=""https://ghostarchive.org/pub/postfix/postfix-release/official/${POSTFIX_SRC_FILE}
+ENV         POSTFIX_URL="https://ghostarchive.org/postfix/postfix-release/official/${POSTFIX_SRC_FILE}"
 ENV         POSTFIX_DEST=${POSTFIX_SRC}
-RUN         wget ${POSTFIX_URL} && \
+RUN         wget ${POSTFIX_GPG_PUB_URL} && gpg --import ${POSTFIX_GPG_PUB_KEY} && \
+            wget ${POSTFIX_URL} && wget ${POSTFIX_URL}.gpg2 && \
+            gpg --verify ${POSTFIX_SRC_FILE}.gpg2 ${POSTFIX_SRC_FILE} && \
             tar -zxvf ${POSTFIX_SRC_FILE} && cd ${POSTFIX_SRC} && \
                 make makefiles CCARGS="-DUSE_TLS -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I/usr/include/sasl" \
                 AUXLIBS="-L/usr/local/lib -lsasl2 -lssl -lcrypto" && \
@@ -55,85 +67,76 @@ ENV         OPENDMARC_DEST=${OPENDMARC_SRC}
 RUN         wget ${OPENDMARC_URL} && tar -zxvf ${OPENDMARC_SRC_FILE} && cd ${OPENDMARC_SRC} && \
             ./configure --prefix=/usr/local/${OPENDMARC_DEST} && make && make install
 # clamavのビルド
-ENV         CLAMAV_VERSION=1.5.4
+ENV         CLAMAV_VERSION=0.105.1
 ENV         CLAMAV_SRC=clamav-${CLAMAV_VERSION}
 ENV         CLAMAV_SRC_FILE=${CLAMAV_SRC}.tar.gz
 ENV         CLAMAV_URL=https://www.clamav.net/downloads/production/${CLAMAV_SRC_FILE}
 ENV         CLAMAV_DEST=${CLAMAV_SRC}
 RUN         apt install -y curl && \
             cd ~/ && curl "https://sh.rustup.rs" -sSf >rustup.sh && \
-            wget -O ${CLAMAV_SRC_FILE} ${CLAMAV_URL} && \
+            chmod 775 rustup.sh && ./rustup.sh -y && \
+            source ~/.cargo/env && \
+            python3 /usr/local/sh/python/fetch_gpg_pub_key.py \
+                "http://www.clamav.net/downloads#collapsePGP" \
+                "#collapsePGP pre" >clamav.pub && \
+            gpg --import clamav.pub && \
+            wget -O ${CLAMAV_SRC_FILE}.sig  ${CLAMAV_URL}.sig && wget -O ${CLAMAV_SRC_FILE} ${CLAMAV_URL} && \
+            gpg --verify ${CLAMAV_SRC_FILE}.sig ${CLAMAV_SRC_FILE} && \
             tar -zxvf ${CLAMAV_SRC_FILE} &&  \
                 cd ${CLAMAV_SRC} && mkdir build && cd build && \
                 cmake .. \
                     -D CMAKE_INSTALL_PREFIX=/usr/local/${CLAMAV_DEST} \
                     -D DATABASE_DIRECTORY=/var/lib/clamav \
-                    -D ENABLE_JSON_SHARED=OFF &&\
+                -D ENABLE_JSON_SHARED=OFF &&\
                 cmake --build . && \
                 ctest && \
                 cmake --build . --target install
-# postgrey
-# ENV         POSTGREY_VERSION=1.3.7
-# ENV         POSTGREY_SRC=postgrey-${POSTGREY_VERSION}
-# ENV         POSTGREY_SRC_FILE=${POSTGREY_SRC}.tar.gz
-# postgrey-1.37.tar.gz
-# ENV         POSTGREY_URL="https://postgrey.schweikert.ch/pub/{POSTGREY_SRC_FILE}"
-# ENV         POSTGREY_DEST=${POSTGREY_SRC}
-# RUN         
+# RUN         apt install -y clamav-milter
 # クリーンアップ
 RUN         apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/*
-
-
-FROM        kagalpandh/kacpp-base
+FROM        kagalpandh/kacpp-pydev
 SHELL       [ "/bin/bash", "-c" ]
 WORKDIR     /root
 USER        root
 EXPOSE      25 587 465 2525
 VOLUME      ["/home/mail_users", "/usr/local/etc"]
-RUN         [[ -r /usr/local/sh/system/usergroup.src ]] && source /usr/local/sh/system/usergroup.src
 # メールクライアントMSMTP用環境変数
 ENV         MSMTP_VERSION=1.8.22
 ENV         MSMTP_DEST=msmtp-${MSMTP_VERSION}
 # rsyslog用環境変数
-ENV         SYSLOG_GID=${_SYSLOG_GID}
-ENV         SYSLOG_UID=${_SYSLOG_UID}
+ENV         SYSLOG_GID=110
+ENV         SYSLOG_UID=104
 # Postfix用環境変数
 ENV         POSTFIX_VERSION=3.7.3
 ENV         POSTFIX_SRC=postfix-${POSTFIX_VERSION}
 ENV         POSTFIX_DEST=${POSTFIX_SRC}
 # Postfix用ユーザー・グループ
-ENV         POSTFIX_GROUP=${_POSTFIX_GROUP}
-ENV         POSTDROP=${_POSTDROP}
-ENV         POSTFIX_USER=${_POSTFIX_USER}
-ENV         PF_GID=${_PF_GID}
-ENV         PD_GID=${_PD_GID}
-ENV         PF_UID=${_PF_UID}
+ENV         POSTFIX_GROUP=postfix
+ENV         POSTDROP=postdrop
+ENV         POSTFIX_USER=postfix
+ENV         PF_GID=996
+ENV         PD_GID=997
+ENV         PF_UID=1003
 ENV         IDENT_TRUST_CERT=lets-encrypt-r3-cross-signed.pem
 # OpenDKIM環境変数
-ENV         OPENDKIM_UID=${_OPENDKIM_UID}
-ENV         OPENDKIM_GID=${_OPENDKIM_GID}
-ENV         OPENDKIM_USER=${_OPENDKIM_USER}
-ENV         OPENDKIM_GROUP=${_OPENDKIM_GROUP}
+ENV         OPENDKIM_UID=113
+ENV         OPENDKIM_GID=120
+ENV         OPENDKIM_USER=opendkim
+ENV         OPENDKIM_GROUP=opendkim
 # OpenDMARC環境変数
 ENV         OPENDMARC_VERSION=1.3.2
 ENV         OPENDMARC_DEST=opendmarc-${OPENDMARC_VERSION}
-ENV         OPENDMARC_UID=${_OPENDMARC_UID}
-ENV         OPENDMARC_GID=${_OPENDMARC_GID}
-ENV         OPENDMARC_USER=${_OPENDMARC_USER}
-ENV         OPENDMARC_GROUP=${_OPENDMARC_GROUP}
+ENV         OPENDMARC_UID=1004
+ENV         OPENDMARC_GID=994
+ENV         OPENDMARC_USER=opendmarc
+ENV         OPENDMARC_GROUP=opendmarc
 # clamav-milter環境変数
 ENV         CLAMAV_VERSION=0.105.1
 ENV         CLAMAV_DEST=clamav-${CLAMAV_VERSION}
-ENV         CLAMAV_UID=${_CLAMAV_UID}
-ENV         CLAMAV_GID=${_CLAMAV_GID}
-ENV         CLAMAV_USER=${_CLAMAV_USER}
-ENV         CLAMAV_GROUP=${_CLAMAV_GROUP}
-# postgrey
-ENV         POSTGREY_UID=${_POSTGREY_UID}
-ENV		    POSTGREY_GID=${_POSTGREY_GID}
-ENV		    POSTGREY_USER=${_POSTGREY_USER}
-ENV		    POSTGREY_GROUP=${_POSTGREY_GROUP}
-
+ENV         CLAMAV_UID=1005
+ENV         CLAMAV_GID=993
+ENV         CLAMAV_USER=clamav
+ENV         CLAMAV_GROUP=clamav
 # postfixはビルドされたものをコピーするため/var/spool/postfixと
 # /var/lib/postfixディレクトリは作成されないので作成
 # ついでにメール用シェルスクリプトディレクトリ/usr/local/sh/mailディレクトリ作成

@@ -22,7 +22,7 @@
 /var/log/mail.log
 /var/log/mail.err
 {
-	rotate 10
+	rotate 7
 	weekly
 	missingok
 	notifempty

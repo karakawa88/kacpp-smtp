@@ -2,8 +2,9 @@
 systemd
 # rsyslog
 rsyslog
-# sqlite3
-sqlite3
+# PostgreSQL
+libpq5
+libpqxx-6.4
 # MySQL
 default-mysql-client
 # Cyrus-SASL
